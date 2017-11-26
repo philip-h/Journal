@@ -3,11 +3,14 @@ package com.isawesome.philip.journal.view;
 import android.app.ActivityOptions;
 import android.content.Intent;
 import android.os.Build;
+import android.support.design.widget.BaseTransientBottomBar;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.transition.AutoTransition;
 import android.transition.ChangeBounds;
 import android.transition.Fade;
@@ -134,6 +137,13 @@ public class MainActivity extends AppCompatActivity implements ViewInterface
     }
 
     @Override
+    public void deleteEntryAt(int position)
+    {
+        mJournalEntries.remove(position);
+        mAdapter.notifyDataSetChanged();
+    }
+
+    @Override
     public void startEntryDetailActivity(String content, String dateCreated, View viewRoot)
     {
         Intent toEntryDetailActivity = new Intent(MainActivity.this, EntryDetailActivity.class);
@@ -141,6 +151,41 @@ public class MainActivity extends AppCompatActivity implements ViewInterface
         toEntryDetailActivity.putExtra(ENTRY_DATE, dateCreated);
         startActivity(toEntryDetailActivity);
     }
+
+    @Override
+    public void showUndoSnackBar()
+    {
+        Snackbar.make(
+                findViewById(R.id.root_journal_row),
+                getString(R.string.snack_delete_entry),
+                Snackbar.LENGTH_LONG
+        )
+        .setAction(R.string.snack_undo, new View.OnClickListener(){
+            @Override
+            public void onClick(View v)
+            {
+                mPresenter.onUndoConfirmed();
+            }
+        })
+        .addCallback(new BaseTransientBottomBar.BaseCallback<Snackbar>()
+        {
+            @Override
+            public void onDismissed(Snackbar transientBottomBar, int event)
+            {
+                super.onDismissed(transientBottomBar, event);
+                mPresenter.onSnackBarTimeout();
+            }
+        })
+        .show();
+    }
+
+    @Override
+    public void insertEntryAt(int position, JournalEntry entry)
+    {
+        mJournalEntries.add(position, entry);
+        mAdapter.notifyDataSetChanged();
+    }
+
 
     private void hookViewsToVars()
     {
@@ -161,10 +206,16 @@ public class MainActivity extends AppCompatActivity implements ViewInterface
         LinearLayoutManager layoutManager = new LinearLayoutManager(MainActivity.this);
         layoutManager.setReverseLayout(true);
         layoutManager.setStackFromEnd(true);
+
         mRecyclerView.setLayoutManager(layoutManager);
         mRecyclerView.setHasFixedSize(true);
+
         mAdapter = new JournalRowAdapter();
         mRecyclerView.setAdapter(mAdapter);
+
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(itemTouchHelperCallback());
+
+        itemTouchHelper.attachToRecyclerView(mRecyclerView);
     }
 
     private boolean aJournalEntryWasCreatedToday()
@@ -247,4 +298,29 @@ public class MainActivity extends AppCompatActivity implements ViewInterface
             }
         }
     }
+
+    private ItemTouchHelper.Callback itemTouchHelperCallback()
+    {
+        ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(
+                0,
+                ItemTouchHelper.LEFT
+        )
+        {
+            @Override
+            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target)
+            {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction)
+            {
+                int position = viewHolder.getAdapterPosition();
+                mPresenter.onEntrySwipedLeft(position, mJournalEntries.get(position));
+            }
+        };
+        return simpleCallback;
+    }
+
+
 }

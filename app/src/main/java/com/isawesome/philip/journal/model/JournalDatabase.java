@@ -101,6 +101,13 @@ public class JournalDatabase extends SQLiteOpenHelper implements ModelInterface
                 new String[] {Long.toString(entry.getId())});
     }
 
+    @Override
+    public void delete(JournalEntry entry)
+    {
+        SQLiteDatabase db = getWritableDatabase();
+        db.delete(TABLE_NAME, "id = ?", new String[]{Long.toString(entry.getId())});
+    }
+
     private static class Queries
     {
         private static final String CREATE_TABLE =

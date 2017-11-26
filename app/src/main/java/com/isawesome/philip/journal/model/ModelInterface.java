@@ -8,7 +8,9 @@ import java.util.List;
 
 public interface ModelInterface
 {
+    // CRUD
     Long create(JournalEntry entry);
     List<JournalEntry> read();
     void update(JournalEntry entry);
+    void delete(JournalEntry entry);
 }

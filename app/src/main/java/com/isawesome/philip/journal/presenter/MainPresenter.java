@@ -17,6 +17,9 @@ public class MainPresenter
     private ViewInterface mView;
     private ModelInterface mModel;
 
+    private JournalEntry mTempEntry;
+    private int mTempPosition;
+
     public MainPresenter(ViewInterface view, ModelInterface model)
     {
         mView = view;
@@ -43,11 +46,43 @@ public class MainPresenter
     {
         Long id = mModel.create(entry);
         mView.addEntryToView(entry, id);
+        JournalEntry newEntry = new JournalEntry("Hello");
+        id = mModel.create(newEntry);
+        mView.addEntryToView(newEntry, id);
 
     }
 
     public void onJournalEntryClick(JournalEntry entry, View v)
     {
         mView.startEntryDetailActivity(entry.getContent(), entry.getDateCreated(), v);
+    }
+
+    public void onEntrySwipedLeft(int position, JournalEntry entry)
+    {
+        mView.deleteEntryAt(position);
+        mView.showUndoSnackBar();
+
+        mTempPosition = position;
+        mTempEntry = entry;
+    }
+
+    public void onUndoConfirmed()
+    {
+        if (mTempEntry != null)
+        {
+            mView.insertEntryAt(mTempPosition, mTempEntry);
+            mTempEntry = null;
+            mTempPosition = -1;
+        }
+    }
+
+
+    public void onSnackBarTimeout()
+    {
+        if (mTempEntry != null)
+            mModel.delete(mTempEntry);
+
+        mTempEntry = null;
+        mTempPosition = -1;
     }
 }

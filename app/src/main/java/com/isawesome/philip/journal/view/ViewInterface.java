@@ -18,5 +18,11 @@ public interface ViewInterface
 
     void updateLatestEntry(JournalEntry entry);
 
+    void deleteEntryAt(int position);
+
     void startEntryDetailActivity(String content, String dateCreated, View viewRoot);
+
+    void showUndoSnackBar();
+
+    void insertEntryAt(int position, JournalEntry entry);
 }
